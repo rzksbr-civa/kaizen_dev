@@ -1,0 +1,175 @@
+.container {
+	margin-top: 50px;
+	margin-bottom: 300px;
+}
+
+.badge-title {
+	font-size: 0.4em;
+	background-color: #5BC0DE;
+	margin-bottom: 10px;
+	padding: 10px 15px;
+}
+
+.dataTables_info {
+	margin-bottom: 10px;
+}
+
+table.table-info td.info-label {
+	width: 30%;
+	font-weight: bold;
+	border-right: 1px solid lightgrey;
+}
+
+table.table-info td.info-content {
+	width: 70%;
+}
+
+/* CSS rule to fix the width in DataTables */
+/* (to make columnDefs work) */
+table {
+  margin: 0 auto;
+  width: 100%;
+  clear: both;
+  border-collapse: collapse;
+  table-layout: fixed;
+  word-wrap: break-word;
+}
+
+input.form-control.column-search-box {
+	width: 100%;
+}
+
+.table-container {
+	min-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+table.datatabled-entity th,
+table.datatabled-entity td,
+table.datatabled-report th,
+table.datatabled-report td {
+	white-space: initial; /* To wrap text */
+}
+
+.entity-label,
+.entity-label:hover {
+	font-size: 14px;
+	color: #777;
+	text-transform: uppercase;
+	display: block;
+	margin-bottom: 10px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	text-decoration: none;
+}
+
+.field-info-area {
+	margin-bottom: 15px;
+}
+
+.field-label {
+	font-size: 12px;
+	color: #777;
+	display: block;
+	text-transform: uppercase;
+}
+
+.field-value {
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.big-input {
+	font-size: 20px;
+	font-weight: bold;
+	height: auto;
+}
+
+.super-big-input {
+	font-size: 32px;
+	font-weight: bold;
+	padding: 0px 10px;
+	height: auto;
+}
+
+.entity-label:hover {
+	color: #CCC;
+}
+
+.selectize-dropdown div.option {
+	cursor: pointer;
+}
+
+.widget-panel-title {
+	font-size: 24px;
+}
+
+.view-detail-info-status-area {
+	margin-bottom: 15px;
+}
+
+.label-view-detail-info {
+	font-size: 14px;
+}
+
+td.dt-center {
+	text-align: center;
+}
+
+td.dt-right {
+	text-align: right;
+}
+
+.table-container, .table-container > table {
+	transform:rotateX(180deg);
+    -ms-transform:rotateX(180deg); /* IE 9 */
+    -webkit-transform:rotateX(180deg); /* Safari and Chrome */
+}
+
+.table-area th, .fixedHeader-floating th, .fixedHeader-locked th {
+	text-align: center;
+}
+
+.widget-partial-info {
+	margin-top: 20px;
+}
+
+.margin-top-zero {
+	margin-top: 0px;
+}
+	
+.flash {
+  -moz-animation: flash 1s ease-out;
+  -moz-animation-iteration-count: 1;
+
+  -webkit-animation: flash 1s ease-out;
+  -webkit-animation-iteration-count: 1;
+
+  -ms-animation: flash 1s ease-out;
+  -ms-animation-iteration-count: 1;
+}
+
+@keyframes flash {
+    0% { background-color: transparent; }
+    50% { background-color: #fbf8b2; }
+    100% { background-color: transparent; }
+}
+
+@-webkit-keyframes flash {
+    0% { background-color: transparent; }
+    50% { background-color: #fbf8b2; }
+    100% { background-color: transparent; }
+}
+
+@-moz-keyframes flash {
+    0% { background-color: transparent; }
+    50% { background-color: #fbf8b2; }
+    100% { background-color: transparent; }
+}
+
+@-ms-keyframes flash {
+    0% { background-color: transparent; }
+    50% { background-color: #fbf8b2; }
+    100% { background-color: transparent; }
+}
