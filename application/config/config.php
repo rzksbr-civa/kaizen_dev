@@ -1,4 +1,8 @@
 <?php
+require_once('/var/www/html/includes/kaizen.inc.php');
+
+error_reporting(E_ERROR | E_PARSE);
+
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 // GENERAL CONFIG
@@ -6,28 +10,28 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 define('PROJECT_NAME', 'Kaizen Helper');
 define('PROJECT_CODE', 'kaizen'); // Don't change this project code
 
-define('PROJECT_BASE_URL', '');
+define('PROJECT_BASE_URL', $CONFIG[PROJECT_CODE]['PROJECT_BASE_URL']);
 
 define('PROJECT_LANGUAGE', 'english');
 
-define('PROJECT_DB_HOSTNAME', 'localhost');
-define('PROJECT_DB_USERNAME', '');
-define('PROJECT_DB_PASSWORD', '');
-define('PROJECT_DB_NAME', '');
+define('PROJECT_DB_HOSTNAME', $CONFIG[PROJECT_CODE]['PROJECT_DB_HOSTNAME']);
+define('PROJECT_DB_USERNAME', $CONFIG[PROJECT_CODE]['PROJECT_DB_USERNAME']);
+define('PROJECT_DB_PASSWORD', $CONFIG[PROJECT_CODE]['PROJECT_DB_PASSWORD']);
+define('PROJECT_DB_NAME', $CONFIG[PROJECT_CODE]['PROJECT_DB_NAME']);
 
-define('SHIPSTREAM_DB_HOSTNAME', 'https://app8.h.shipstream.io');
-define('SHIPSTREAM_DB_USERNAME', 'circlek');
-define('SHIPSTREAM_DB_PASSWORD', 'dRxC3DTKnCWtDqzm');
-define('SHIPSTREAM_DB_NAME', 'mwe');
+define('SHIPSTREAM_DB_HOSTNAME', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_HOSTNAME']);
+define('SHIPSTREAM_DB_USERNAME', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_USERNAME']);
+define('SHIPSTREAM_DB_PASSWORD', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_PASSWORD']);
+define('SHIPSTREAM_DB_NAME', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_NAME']);
 
-define('TSHEETS_AUTHORIZATION', 'Bearer S.7__5b45fc4a7e7dd91d862791f947072e67e5970326');
+define('TSHEETS_AUTHORIZATION', $CONFIG[PROJECT_CODE]['TSHEETS_AUTHORIZATION']);
 
-define('UPS_API_KEY', '0DA0012065349055');
+define('UPS_API_KEY', $CONFIG[PROJECT_CODE]['UPS_API_KEY']);
 
 // Please update this UPS account user ID and password in order to use the UPS API
 // Sign up a UPS account on https://wwwapps.ups.com/doapp/signup
-define('UPS_ACCOUNT_USER_ID', 'INSERT_YOUR_UPS_ACCOUNT_USER_ID_HERE');
-define('UPS_ACCOUNT_PASSWORD', 'INSERT_YOUR_UPS_ACCOUNT_PASSWORD_HERE');
+define('UPS_ACCOUNT_USER_ID', $CONFIG[PROJECT_CODE]['UPS_ACCOUNT_USER_ID']);
+define('UPS_ACCOUNT_PASSWORD', $CONFIG[PROJECT_CODE]['UPS_ACCOUNT_PASSWORD']);
 
 /*
 |--------------------------------------------------------------------------

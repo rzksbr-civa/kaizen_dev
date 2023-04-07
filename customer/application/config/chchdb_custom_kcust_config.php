@@ -27,7 +27,7 @@ $config['header_menu'] = array(
 		'label'   => 'Boards',
 		'submenu' => array (
 			array('type' => 'link', 'label' => 'Package Status Board', 'link' => 'kcust/carrier_status_dashboard_for_packages'),
-			array('type' => 'link', 'label' => 'Client Inventory Optimization Board', 'link' => 'db/view/client_inventory_optimization_board'),
+			array('type' => 'link', 'label' => 'Client Inventory Optimization Board', 'link' => 'kcust/client_inventory_optimization_board'),
 		)
 	),
 );

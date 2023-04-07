@@ -1,0 +1,41 @@
+# FedEx Package Status
+* * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/update_fedex_packages_status
+
+# UPS Package Status 
+* * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/update_ups_packages_status
+
+# Other Carriers' Package Status 
+*/2 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/update_other_carriers_packages_status
+
+# Update daily inventory levels
+0 17 * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/update_inventory_levels_table
+
+# Update ticket initial response
+*/30 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/mins_to_initial_response
+
+# Update ticket history
+*/2 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/ticket_history
+
+# Update ticket status 
+*/15 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/open_tickets_status_count
+
+# Check deleted tickets 
+*/30 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/update_current_open_tickets
+
+# Update shipment report table 
+*/30 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/shipment_report_table
+
+# Tsheets Wages & Revenue Update 
+*/30 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/wages_and_revenue
+
+# Update live drops 
+*/15 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/live_drops
+
+# Update packages 
+*/30 * * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/packages
+
+# Update long term inventory levels table (180 days milestone)
+0 */6 * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/update_long_term_inventory_levels_table/180
+
+# Update long term inventory levels table (365 days milestone)
+0 */6 * * * /usr/bin/wget -O /dev/null -o /dev/null kaizen.redstagfulfillment.com/kaizen/update_public/update_long_term_inventory_levels_table/365

@@ -1,4 +1,7 @@
 <?php
+
+require_once('/var/www/html/includes/kaizen_cust.inc.php');
+
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 // GENERAL CONFIG
@@ -6,19 +9,19 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 define('PROJECT_NAME', 'Kaizen Helper for Customer');
 define('PROJECT_CODE', 'kcust'); // Don't change this project code
 
-define('PROJECT_BASE_URL', 'http://localhost/project/ikanban/kaizen/customer/');
+define('PROJECT_BASE_URL', $CONFIG[PROJECT_CODE]['PROJECT_BASE_URL']);
 
 define('PROJECT_LANGUAGE', 'english');
 
-define('PROJECT_DB_HOSTNAME', 'localhost');
-define('PROJECT_DB_USERNAME', 'root');
-define('PROJECT_DB_PASSWORD', '');
-define('PROJECT_DB_NAME', 'chchdb_kcust');
+define('PROJECT_DB_HOSTNAME', $CONFIG[PROJECT_CODE]['PROJECT_DB_HOSTNAME']);
+define('PROJECT_DB_USERNAME', $CONFIG[PROJECT_CODE]['PROJECT_DB_USERNAME']);
+define('PROJECT_DB_PASSWORD', $CONFIG[PROJECT_CODE]['PROJECT_DB_PASSWORD']);
+define('PROJECT_DB_NAME', $CONFIG[PROJECT_CODE]['PROJECT_DB_NAME']);
 
-define('SHIPSTREAM_DB_HOSTNAME', 'https://app8.h.shipstream.io');
-define('SHIPSTREAM_DB_USERNAME', 'circlek');
-define('SHIPSTREAM_DB_PASSWORD', 'dRxC3DTKnCWtDqzm');
-define('SHIPSTREAM_DB_NAME', 'mwe');
+define('SHIPSTREAM_DB_HOSTNAME', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_HOSTNAME']);
+define('SHIPSTREAM_DB_USERNAME', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_USERNAME']);
+define('SHIPSTREAM_DB_PASSWORD', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_PASSWORD']);
+define('SHIPSTREAM_DB_NAME', $CONFIG[PROJECT_CODE]['SHIPSTREAM_DB_NAME']);
 
 /*
 |--------------------------------------------------------------------------

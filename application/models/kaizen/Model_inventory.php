@@ -295,7 +295,7 @@ class Model_inventory extends CI_Model {
 		$replenishment_stock_data_tmp = $this->model_replenishment->get_replenishment_stock_data(
 			array(
 				'facility' => $data['facility'],
-				'service_level_percentage' => 0.97
+				'service_level_percentage' => 97
 			)
 		);
 		

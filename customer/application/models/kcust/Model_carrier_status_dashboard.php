@@ -8,11 +8,11 @@ class Model_carrier_status_dashboard extends CI_Model {
 	
 	public function get_carrier_status_dashboard_data($data) {
 		ini_set('max_execution_time', 300);
-		$prod_db = $this->load->database('prod', TRUE);
+		$prod_db = $this->load->database('prod_packages', TRUE);
 			
 		$period_from = !empty($data['period_from']) ? $data['period_from'] : date('Y-m-d');
 		$period_to = !empty($data['period_to']) ? $data['period_to'] : date('Y-m-d');
-		
+
 		$prod_db
 			->select(
 				"package_id,
