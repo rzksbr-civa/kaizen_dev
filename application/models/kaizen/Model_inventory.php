@@ -206,24 +206,48 @@ class Model_inventory extends CI_Model {
 		return $data;
 	}
 	
-	public function get_live_drops_data($data) {
+	public function get_live_drops_data($data)
+	{
+
 		$redstag_db = $this->load->database('redstag', TRUE);
+
+		/* $data = $redstag_db->query('SELECT cw.name as merchant, cs.name as store, dc.value as logo_path FROM core_config_data dc join core_store cs on dc.scope_id = cs.store_id join core_website cw on cs.website_id = cw.website_id WHERE path regexp "^sales\/identity\/logo$"')->result_array();
+		echo json_encode($data);exit; */
 		$prod_db = $this->load->database('prod', TRUE);
-		
-		if(!empty($data['facility'])) {
+
+		if (!empty($data['facility'])) {
 			$facility_data_tmp = $this->db
 				->select('*')
 				->from('facilities')
-				->where('data_status',DATA_ACTIVE)
-				->where('id',$data['facility'])
+				->where('data_status', DATA_ACTIVE)
+				->where('id', $data['facility'])
 				->get()->result_array();
 			$facility_data = $facility_data_tmp[0];
 			$data['facility_name'] = strtoupper($facility_data['facility_name']);
 		}
-		
+
 		$stock_id = isset($facility_data['stock_id']) ? $facility_data['stock_id'] : null;
 		$data['stock_id'] = $stock_id;
-		
+
+		// CIVA - 04152023
+
+		if ($data['facility'] == 3) {
+			$facility_data_tmp = $this->db
+				->select('*')
+				->from('facilities')
+				->where('data_status', DATA_ACTIVE)
+				->where('id', 1)
+				->get()->result_array();
+			$facility_data = $facility_data_tmp[0];
+			$data['facility_name'] = strtoupper($facility_data['facility_name']);
+
+			$stock_id = isset($facility_data['stock_id']) ? $facility_data['stock_id'] : null;
+			$data['stock_id_a'] = $stock_id;
+		}
+
+		$data_stock_id = implode(',', $data['stock_id']);
+
+
 		// Live drops
 		$drop_sheet_data_query = "SELECT s.name AS warehouse,
 			   w.name                AS merchant,
@@ -272,65 +296,132 @@ class Model_inventory extends CI_Model {
 		JOIN cataloginventory_stock AS s ON sl.stock_id = s.stock_id
 		JOIN core_website AS w ON t2.website_id = w.website_id
 		WHERE stock_sub(stock_add(qty_unreserved, qty_reserved, lcm), qty_locked, lcm) > 0
-		  ".(!empty($data['stock_id']) ? "AND t2.stock_id = ".$data['stock_id'] : "")."
+		  " . (!empty($data['stock_id']) ? "AND t2.stock_id = " . $data['stock_id'] : "") . "
 		  AND sl.is_pickable = 0
 		ORDER BY t2.stock_id, t2.website_id, qty_needed DESC, t2.product_id, -days_until_expiration DESC, origination_date ASC, stock_sub(stock_add(qty_unreserved, qty_reserved, lcm), qty_locked, lcm) ASC, priority";
-		
+
 		$drop_sheet_data = $redstag_db->query($drop_sheet_data_query)->result_array();
-		
+
+		/* if(isset($data['stock_id_a'])){
+			$customer_names = '';
+			$customers = $prod_db->query("SELECT * FROM moved_customers")->result_array();
+			if(count($customers)){
+				$customer_names = array_column($customers,'name');
+			}
+
+			$drop_sheet_data_query_a = "SELECT s.name AS warehouse,
+				w.name AS merchant,
+				product_name,
+				sku,
+				qty_demand AS qty_allocated,
+				qty_pickable,
+				qty_needed AS qty_required,
+				label AS location,
+				origination_date,
+				days_until_expiration,
+				expiration_date,
+				stock_sub(stock_add(qty_unreserved, qty_reserved, lcm), qty_locked, lcm) AS qrt_relocatable
+			FROM (
+				SELECT stock_id,
+						website_id,
+						product_id,
+						sku,
+						name AS product_name,
+						stock_item_id,
+						stock_sub(stock_add(qty_allocated, qty_reserved, lcm), qty_locked, lcm) AS qty_demand,
+						qty_pickable,
+						stock_sub(stock_sub(stock_add(qty_allocated, qty_reserved, lcm), qty_locked, lcm), qty_pickable, lcm) AS qty_needed,
+						lcm
+				FROM cataloginventory_stock_item AS si
+				JOIN (
+					SELECT l.stock_item_id,
+							lcm,
+							ROUND(SUM(qty_locked * lcm) / lcm, 4) AS qty_locked,
+							ROUND(SUM(IF(is_pickable = -1, ROUND(qty_unreserved * lcm) + ROUND(qty_reserved * lcm) - ROUND(qty_locked * lcm), 0)) / lcm, 4) AS qty_pickable,
+							ROUND(SUM(IF(is_pickable = 0, ROUND(qty_unreserved * lcm) + ROUND(qty_reserved * lcm) - ROUND(qty_locked * lcm), 0)) / lcm, 4) AS qty_unpickable
+					FROM cataloginventory_stock_location l
+					INNER JOIN (
+						SELECT item_id as stock_item_id, COALESCE(lcm, 10000) as lcm
+						FROM cataloginventory_stock_item si
+						LEFT OUTER JOIN catalog_product_bom_lcm_idx lcm ON lcm.product_id = si.product_id
+					) lcm ON l.stock_item_id = lcm.stock_item_id
+					GROUP BY stock_item_id
+				) AS t1 ON si.item_id = t1.stock_item_id
+				JOIN catalog_product_entity AS cp ON (si.product_id = cp.entity_id)
+				WHERE stock_sub(stock_sub(stock_add(qty_allocated, qty_reserved, lcm), qty_locked, lcm), qty_pickable, lcm) > 0
+				ORDER BY stock_id, website_id, qty_needed DESC, product_id
+			) AS t2
+			JOIN cataloginventory_stock_location AS sl ON t2.stock_item_id = sl.stock_item_id AND sl.is_temp = 0
+			LEFT OUTER JOIN stock_lot AS slot ON sl.lot_id = slot.lot_id
+			JOIN cataloginventory_stock AS s ON sl.stock_id = s.stock_id
+			JOIN core_website AS w ON t2.website_id = w.website_id
+			WHERE stock_sub(stock_add(qty_unreserved, qty_reserved, lcm), qty_locked, lcm) > 0
+			" . (!empty($data['stock_id_a']) ? "AND t2.stock_id = " . $data['stock_id_a'] : "") . "
+			AND sl.is_pickable = 0
+			AND w.name IN ('".implode("','",$customer_names)."')
+			ORDER BY t2.stock_id, t2.website_id, qty_needed DESC, t2.product_id, -days_until_expiration DESC, origination_date ASC, stock_sub(stock_add(qty_unreserved, qty_reserved, lcm), qty_locked, lcm) ASC, priority";
+					
+			$drop_sheet_data_a = $redstag_db->query($drop_sheet_data_query_a)->result_array();
+
+			$drop_sheet_data = array_merge($drop_sheet_data, $drop_sheet_data_a);
+		} */
+
+
 		$new_and_in_processing_skus_data = $redstag_db->query("SELECT DISTINCT(catalog_product_entity.sku) AS sku
 				FROM sales_flat_shipment_item
 				JOIN sales_flat_shipment ON sales_flat_shipment.entity_id = sales_flat_shipment_item.parent_id
 				JOIN sales_flat_order ON sales_flat_order.entity_id = sales_flat_shipment.order_id
 				JOIN catalog_product_entity ON catalog_product_entity.entity_id = sales_flat_shipment_item.product_id
-				WHERE sales_flat_shipment.target_ship_date = ".$redstag_db->escape($data['date'])."
+				WHERE sales_flat_shipment.target_ship_date = " . $redstag_db->escape($data['date']) . "
 				AND sales_flat_order.status IN ('new', 'processing')")->result_array();
-			
+
+		/* print_r(json_encode($new_and_in_processing_skus_data));
+		exit; */
+
 		$new_and_in_processing_skus = array();
-		if(!empty($new_and_in_processing_skus_data)) {
+		if (!empty($new_and_in_processing_skus_data)) {
 			$new_and_in_processing_skus = array_column($new_and_in_processing_skus_data, 'sku');
 		}
-		
-		$this->load->model(PROJECT_CODE.'/model_replenishment');
+
+		// $new_and_in_processing_skus[] = 'FBA-2E-ORTK-JWI7';
+
+		$this->load->model(PROJECT_CODE . '/model_replenishment');
 		$replenishment_stock_data_tmp = $this->model_replenishment->get_replenishment_stock_data(
 			array(
 				'facility' => $data['facility'],
 				'service_level_percentage' => 97
 			)
 		);
-		
+
 		$replenishment_stock_data = array();
-		foreach($replenishment_stock_data_tmp as $current_data) {
+		foreach ($replenishment_stock_data_tmp as $current_data) {
 			$replenishment_stock_data[$current_data['sku']] = $current_data;
 		}
-		
+
 		$unique_warehouse_merchant_skus = array();
 		$live_drops_data = array();
-		
-		foreach($drop_sheet_data as $current_data) {
+
+		foreach ($drop_sheet_data as $current_data) {
 			$warehouse_merchant_sku = $current_data['warehouse'] . ';' . $current_data['merchant'] . ';' . $current_data['sku'];
-			
-			if(isset($replenishment_stock_data[$current_data['sku']])) {
+
+			if (isset($replenishment_stock_data[$current_data['sku']])) {
 				$current_data['sku_tier'] = $replenishment_stock_data[$current_data['sku']]['sku_tier'];
-				$current_data['current_nonpickable_stock'] = number_format($replenishment_stock_data[$current_data['sku']]['current_nonpickable_stock'],0,'.','');
-				$current_data['total_stock_on_hand'] = number_format($replenishment_stock_data[$current_data['sku']]['total_stock_on_hand'],0,'.','');
-				$current_data['stock_needed_for_service_level'] = number_format($replenishment_stock_data[$current_data['sku']]['stock_needed_for_service_level'],1,'.','');
+				$current_data['current_nonpickable_stock'] = number_format($replenishment_stock_data[$current_data['sku']]['current_nonpickable_stock'], 0, '.', '');
+				$current_data['total_stock_on_hand'] = number_format($replenishment_stock_data[$current_data['sku']]['total_stock_on_hand'], 0, '.', '');
+				$current_data['stock_needed_for_service_level'] = number_format($replenishment_stock_data[$current_data['sku']]['stock_needed_for_service_level'], 1, '.', '');
 				$current_data['need_restock'] = $replenishment_stock_data[$current_data['sku']]['need_restock'];
-				
+
 				$current_data['row_color'] = 'none';
-				if($current_data['need_restock'] == 'Yes') {
-					if($current_data['sku_tier'] == 'T1') {
+				if ($current_data['need_restock'] == 'Yes') {
+					if ($current_data['sku_tier'] == 'T1') {
 						$current_data['row_color'] = 'red';
-					}
-					else if($current_data['sku_tier'] == 'T2' || $current_data['sku_tier'] == 'T3') {
+					} else if ($current_data['sku_tier'] == 'T2' || $current_data['sku_tier'] == 'T3') {
 						$current_data['row_color'] = 'orange';
-					}
-					else if($current_data['sku_tier'] == 'T4' || $current_data['sku_tier'] == 'T5') {
+					} else if ($current_data['sku_tier'] == 'T4' || $current_data['sku_tier'] == 'T5') {
 						$current_data['row_color'] = 'yellow';
 					}
 				}
-			}
-			else {
+			} else {
 				$current_data['sku_tier'] = '';
 				$current_data['current_nonpickable_stock'] = '';
 				$current_data['total_stock_on_hand'] = '';
@@ -338,16 +429,16 @@ class Model_inventory extends CI_Model {
 				$current_data['need_restock'] = '';
 				$current_data['row_color'] = 'none';
 			}
-			
-			if(!in_array($warehouse_merchant_sku, $unique_warehouse_merchant_skus)) {
+
+			if (!in_array($warehouse_merchant_sku, $unique_warehouse_merchant_skus)) {
 				$unique_warehouse_merchant_skus[] = $warehouse_merchant_sku;
 
-				if(in_array($current_data['sku'], $new_and_in_processing_skus)) {
+				if (in_array($current_data['sku'], $new_and_in_processing_skus)) {
 					$live_drops_data[] = $current_data;
 				}
 			}
 		}
-		
+
 		return $live_drops_data;
 	}
 	

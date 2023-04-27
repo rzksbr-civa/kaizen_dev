@@ -42,28 +42,51 @@ class Model_replenishment extends CI_Model {
 		return $data;
 	}
 	
-	public function get_replenishment_stock_data($data) {
+	public function get_replenishment_stock_data($data)
+	{
 		$redstag_db = $this->load->database('redstag', TRUE);
-		
-		if(!empty($data['facility'])) {
+
+		if (!empty($data['facility'])) {
 			$facility_data_tmp = $this->db
 				->select('*')
 				->from('facilities')
-				->where('data_status',DATA_ACTIVE)
-				->where('id',$data['facility'])
+				->where('data_status', DATA_ACTIVE)
+				->where('id', $data['facility'])
 				->get()->result_array();
 			$facility_data = $facility_data_tmp[0];
 			$data['facility_name'] = strtoupper($facility_data['facility_name']);
 		}
-		
+
 		$stock_id = isset($facility_data['stock_id']) ? $facility_data['stock_id'] : null;
+
+		// CIVA BEGIN - 04152023
+
+		$data['stock_id'][] = $stock_id;
+		if ($data['facility'] == 3) {
+			$facility_data_tmp = $this->db
+				->select('*')
+				->from('facilities')
+				->where('data_status', DATA_ACTIVE)
+				->where('id', 1)
+				->get()->result_array();
+			$facility_data = $facility_data_tmp[0];
+			$data['facility_name'] = strtoupper($facility_data['facility_name']);
+
+			$stock_id = isset($facility_data['stock_id']) ? $facility_data['stock_id'] : null;
+			$data['stock_id'][] = $stock_id;
+		}
+
+		$data_stock_id = implode(',', $data['stock_id']);
+
+		// CIVA END - 04152023
+
 		$timezone = isset($facility_data['timezone']) ? $facility_data['timezone'] : -5; // Default is Island River facility timezone
 		$timezone += date('I');
-		
+
 		$period_from = !empty($data['period_from']) ? $data['period_from'] : date('Y-m-d', strtotime('-30 day'));
 		$period_to = !empty($data['period_to']) ? $data['period_to'] : date('Y-m-d');
-		
-		if(!isset($data['default_replenish_freq_tier'])) {
+
+		if (!isset($data['default_replenish_freq_tier'])) {
 			$data['default_replenish_freq_tier'] = array(
 				1 => 3,
 				2 => 7,
@@ -71,17 +94,17 @@ class Model_replenishment extends CI_Model {
 				4 => 30,
 				5 => 30
 			);
-			
+
 			$data['replenish_freq_tier_1'] = $data['default_replenish_freq_tier'][1];
 			$data['replenish_freq_tier_2'] = $data['default_replenish_freq_tier'][2];
 			$data['replenish_freq_tier_3'] = $data['default_replenish_freq_tier'][3];
 			$data['replenish_freq_tier_4'] = $data['default_replenish_freq_tier'][4];
 			$data['replenish_freq_tier_5'] = $data['default_replenish_freq_tier'][5];
 		}
-		
-		$num_days = (strtotime($period_to) - strtotime($period_from))/86400 + 1;
-		$z_score = $this->normsinv($data['service_level_percentage']/100);
-		
+
+		$num_days = (strtotime($period_to) - strtotime($period_from)) / 86400 + 1;
+		$z_score = $this->normsinv($data['service_level_percentage'] / 100);
+
 		// New and in processing SKU
 		/*$new_and_in_processing_skus_data = $redstag_db->query("SELECT DISTINCT(catalog_product_entity.sku) AS sku
 			FROM sales_flat_shipment_item
@@ -95,13 +118,15 @@ class Model_replenishment extends CI_Model {
 		if(!empty($new_and_in_processing_skus_data)) {
 			$new_and_in_processing_skus = array_column($new_and_in_processing_skus_data, 'sku');
 		}*/
-		
+
 		// Current pickable stock
-		
+
 		$redstag_db
 			->select(
 				'catalog_product_entity.sku,
-				SUM(cataloginventory_stock_location.qty_unreserved) AS stock_qty', false)
+				SUM(cataloginventory_stock_location.qty_unreserved) AS stock_qty',
+				false
+			)
 			->from('cataloginventory_stock_location')
 			->join('cataloginventory_stock_item', 'cataloginventory_stock_item.item_id = cataloginventory_stock_location.stock_item_id')
 			->join('cataloginventory_product', 'cataloginventory_product.product_id = cataloginventory_stock_item.product_id')
@@ -110,24 +135,26 @@ class Model_replenishment extends CI_Model {
 			->where('cataloginventory_stock_location.qty_reserved <=', 1)
 			->where('cataloginventory_stock_location.is_pickable', -1)
 			->group_by('sku');
-		
-		if(!empty($data['facility'])) {
-			$redstag_db->where('cataloginventory_stock_location.stock_id', $stock_id);
+
+		if (!empty($data['facility'])) {
+			$redstag_db->where('cataloginventory_stock_location.stock_id IN (' . $data_stock_id . ')'); //CIVA 04152023 - modified to check stock_id in array
 		}
-		
+
 		$current_pickable_stock_data = $redstag_db->get()->result_array();
-		
+
 		$current_pickable_stock_data = array_combine(
 			array_column($current_pickable_stock_data, 'sku'),
 			array_column($current_pickable_stock_data, 'stock_qty')
 		);
-		
+
 		// Current nonpickable stock
-		
+
 		$redstag_db
 			->select(
 				'catalog_product_entity.sku,
-				SUM(cataloginventory_stock_location.qty_unreserved) AS stock_qty', false)
+				SUM(cataloginventory_stock_location.qty_unreserved) AS stock_qty',
+				false
+			)
 			->from('cataloginventory_stock_location')
 			->join('cataloginventory_stock_item', 'cataloginventory_stock_item.item_id = cataloginventory_stock_location.stock_item_id')
 			->join('cataloginventory_product', 'cataloginventory_product.product_id = cataloginventory_stock_item.product_id')
@@ -136,99 +163,97 @@ class Model_replenishment extends CI_Model {
 			->where('cataloginventory_stock_location.qty_reserved <=', 1)
 			->where('cataloginventory_stock_location.is_pickable', 0)
 			->group_by('sku');
-		
-		if(!empty($data['facility'])) {
-			$redstag_db->where('cataloginventory_stock_location.stock_id', $stock_id);
+
+		if (!empty($data['facility'])) {
+			$redstag_db->where('cataloginventory_stock_location.stock_id IN (' . $data_stock_id . ')'); //CIVA 04152023 - modified to check stock_id in array
 		}
-		
+
 		$current_nonpickable_stock_data = $redstag_db->get()->result_array();
-		
+
 		$current_nonpickable_stock_data = array_combine(
 			array_column($current_nonpickable_stock_data, 'sku'),
 			array_column($current_nonpickable_stock_data, 'stock_qty')
 		);
-		
+
 		$local_completed_time_field = "IF(sales_flat_order_stock.stock_id IN (3,6),CONVERT_TZ(sales_flat_order.completed_at,'UTC', 'US/Mountain'),CONVERT_TZ(sales_flat_order.completed_at,'UTC','US/Eastern'))";
-		
+
 		$redstag_db
 			->select(
 				'sales_flat_order_item.sku,
 				COUNT(*) AS count_of_orders_with_sku,
 				AVG(qty_ordered) AS average_of_item_count_per_order,
 				SUM(qty_ordered) AS sum_of_items,
-				STD(qty_ordered) AS standard_deviation', false)
+				STD(qty_ordered) AS standard_deviation',
+				false
+			)
 			->from('sales_flat_order_item')
 			->join('sales_flat_order', 'sales_flat_order.entity_id = sales_flat_order_item.order_id')
 			->join('sales_flat_order_stock', 'sales_flat_order_stock.order_id = sales_flat_order.entity_id', 'right')
-			->where($local_completed_time_field . ' >= \''.$period_from.'\'', null, false)
-			->where($local_completed_time_field . ' < \''.$period_to.'\'', null, false)
+			->where($local_completed_time_field . ' >= \'' . $period_from . '\'', null, false)
+			->where($local_completed_time_field . ' < \'' . $period_to . '\'', null, false)
 			->group_by('sales_flat_order_item.sku')
 			->order_by('sum_of_items', 'desc');
-			
-		if(!empty($data['facility'])) {
-			$redstag_db->where('sales_flat_order_stock.stock_id', $stock_id);
+
+		if (!empty($data['facility'])) {
+			$redstag_db->where('sales_flat_order_stock.stock_id IN (' . $data_stock_id . ')'); //CIVA 04152023 - modified to check stock_id in array
 		}
-		
-		if(!empty($data['customer'])) {
+
+		if (!empty($data['customer'])) {
 			$redstag_db->where('sales_flat_order.store_id', $data['customer']);
 		}
-		
+
 		$replenishment_release_board_data = $redstag_db->get()->result_array();
-		
+
 		$cumulative = 0;
-		foreach($replenishment_release_board_data as $key => $current_data) {
+		foreach ($replenishment_release_board_data as $key => $current_data) {
 			$cumulative += $current_data['sum_of_items'];
-			
+
 			$replenishment_release_board_data[$key]['average_daily_demand'] = !empty($num_days) ? $current_data['sum_of_items'] / $num_days : 0;
 			$replenishment_release_board_data[$key]['cumulative'] = $cumulative;
 		}
-		
-		foreach($replenishment_release_board_data as $key => $current_data) {
+
+		foreach ($replenishment_release_board_data as $key => $current_data) {
 			$cumulative_percentage = $current_data['cumulative'] / $cumulative * 100;
 			$replenishment_release_board_data[$key]['cumulative_percentage'] = $cumulative_percentage;
-			
-			if($cumulative_percentage <= 20) {
+
+			if ($cumulative_percentage <= 20) {
 				$sku_tier = 'Tier-1';
 				$replenish_freq = $data['replenish_freq_tier_1'];
-			}
-			else if($cumulative_percentage <= 50) {
+			} else if ($cumulative_percentage <= 50) {
 				$sku_tier = 'Tier-2';
 				$replenish_freq = $data['replenish_freq_tier_2'];
-			}
-			else if($cumulative_percentage <= 70) {
+			} else if ($cumulative_percentage <= 70) {
 				$sku_tier = 'Tier-3';
 				$replenish_freq = $data['replenish_freq_tier_3'];
-			}
-			else if($cumulative_percentage <= 90) {
+			} else if ($cumulative_percentage <= 90) {
 				$sku_tier = 'Tier-4';
 				$replenish_freq = $data['replenish_freq_tier_4'];
-			}
-			else {
+			} else {
 				$sku_tier = 'Tier-5';
 				$replenish_freq = $data['replenish_freq_tier_5'];
 			}
-			
-			if(!empty($data['sku_tier']) && !in_array($sku_tier, $data['sku_tier'])) {
+
+			if (!empty($data['sku_tier']) && !in_array($sku_tier, $data['sku_tier'])) {
 				unset($replenishment_release_board_data[$key]);
 				continue;
 			}
-			
+
 			$replenishment_release_board_data[$key]['sku_tier'] = $sku_tier;
 			$replenishment_release_board_data[$key]['replenish_freq'] = $replenish_freq;
-			
+
 			$replenishment_release_board_data[$key]['safety_stock'] = $current_data['average_daily_demand'] * $z_score;
 			$replenishment_release_board_data[$key]['reorder_point'] = $current_data['average_daily_demand'] * $replenish_freq + $replenishment_release_board_data[$key]['safety_stock'];
-			
+
 			$replenishment_release_board_data[$key]['current_pickable_stock'] = !empty($current_pickable_stock_data[$current_data['sku']]) ? $current_pickable_stock_data[$current_data['sku']] : 0;
 			$replenishment_release_board_data[$key]['current_nonpickable_stock'] = !empty($current_nonpickable_stock_data[$current_data['sku']]) ? $current_nonpickable_stock_data[$current_data['sku']] : 0;
-			
+
 			$replenishment_release_board_data[$key]['total_stock_on_hand'] = $replenishment_release_board_data[$key]['current_pickable_stock'] + $replenishment_release_board_data[$key]['current_nonpickable_stock'];
-			
+
 			$replenishment_release_board_data[$key]['stock_needed_for_service_level'] = ceil($replenishment_release_board_data[$key]['safety_stock'] + $replenishment_release_board_data[$key]['reorder_point']);
-			
+
 			$replenishment_release_board_data[$key]['need_restock'] = ($replenishment_release_board_data[$key]['current_nonpickable_stock'] == 0 || $replenishment_release_board_data[$key]['current_pickable_stock'] > $replenishment_release_board_data[$key]['stock_needed_for_service_level']) ? 'No' : 'Yes';
 		}
-		
+
 		return $replenishment_release_board_data;
 	}
 	
